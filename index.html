@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Jogo da memória: encontre todos os pares no menor número de movimentos.">
+  <title>Memory Game — Desafio da Memória</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--panel2:#19263a;--line:#293951;--text:#f4f7fb;--muted:#9aabc1;--cyan:#54d6cf;--blue:#6e9cff;--gold:#ffd166;--radius:20px}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#203958 0,transparent 55%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,select{font:inherit}
+    .app{width:min(100% - 32px,900px);margin:auto;padding:32px 0 48px}
+    header{text-align:center;margin-bottom:24px}
+    .eyebrow{display:inline-flex;gap:8px;align-items:center;color:var(--cyan);font-size:.76rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+    h1{font-size:clamp(2rem,7vw,3.5rem);letter-spacing:-.055em;margin:10px 0 8px;line-height:1}
+    h1 span{color:var(--cyan)}
+    .subtitle{margin:0;color:var(--muted);font-size:clamp(.9rem,2.5vw,1.05rem)}
+    .game{background:linear-gradient(160deg,rgba(25,38,58,.96),rgba(16,27,43,.96));border:1px solid var(--line);border-radius:26px;padding:clamp(14px,3vw,26px);box-shadow:0 24px 70px #0005}
+    .toolbar{display:flex;gap:12px;align-items:end;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+    .difficulty{display:grid;gap:6px;color:var(--muted);font-size:.78rem;font-weight:700}
+    select{background:#0d1726;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:10px 34px 10px 12px;min-width:150px;outline-offset:3px}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1;max-width:480px}
+    .stat{background:#0d1726;border:1px solid var(--line);border-radius:13px;padding:10px 12px;text-align:center;min-width:0}
+    .stat strong{display:block;font-size:clamp(1.05rem,3vw,1.4rem);font-variant-numeric:tabular-nums}
+    .stat small{display:block;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+    .board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(7px,1.8vw,13px);max-width:660px;margin:0 auto}
+    .card{border:0;background:transparent;padding:0;aspect-ratio:1;perspective:800px;cursor:pointer;min-width:0}
+    .card-inner{display:block;position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .42s cubic-bezier(.2,.7,.2,1)}
+    .card.flipped .card-inner,.card.matched .card-inner{transform:rotateY(180deg)}
+    .face{position:absolute;inset:0;display:grid;place-items:center;border-radius:clamp(10px,2vw,17px);backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid #3b526e}
+    .back{background:linear-gradient(145deg,#263d59,#17283e);font-size:clamp(1.3rem,5vw,2.2rem);color:#81e5df;box-shadow:inset 0 1px #ffffff12}
+    .back:after{content:"✦";opacity:.8}
+    .front{transform:rotateY(180deg);background:linear-gradient(145deg,#f2f7ff,#dce8f7);color:#17263a;font-size:clamp(1.5rem,6vw,3rem);box-shadow:0 5px 14px #0002}
+    .card:not(.matched):hover .back{border-color:var(--cyan);filter:brightness(1.13)}
+    .card:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:17px}
+    .card.matched .front{background:linear-gradient(145deg,#c8fff0,#8de0cc);border-color:#75d9bd}
+    .card:disabled{cursor:default}
+    .actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+    .btn{border:1px solid var(--line);border-radius:12px;padding:11px 18px;color:var(--text);background:#1c2b40;font-weight:750;cursor:pointer;transition:transform .15s,background .15s}
+    .btn:hover{transform:translateY(-2px);background:#263b56}
+    .btn.primary{background:var(--cyan);border-color:var(--cyan);color:#082328}
+    .btn.primary:hover{background:#7ce7df}
+    .hint{text-align:center;color:var(--muted);font-size:.82rem;margin:17px 0 0}
+    .message{display:none;text-align:center;margin:20px auto 0;padding:18px;border:1px solid #3e897e;background:#153b39;border-radius:16px;max-width:500px}
+    .message.show{display:block;animation:pop .3s ease}
+    .message h2{margin:0 0 5px;color:#8df1d8;font-size:1.4rem}
+    .message p{margin:0;color:#d1eee7}
+    footer{text-align:center;color:#71839b;font-size:.75rem;margin-top:18px}
+    @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+    @media(min-width:650px){.board{gap:14px}.game{padding:26px}}
+    @media(max-width:520px){.app{width:min(100% - 20px,900px);padding:22px 0 30px}.toolbar{align-items:stretch}.difficulty{flex:1}.stats{max-width:none;flex-basis:100%}.stat{padding:9px 5px}.board{gap:7px}.game{border-radius:20px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="eyebrow">✦ Treine sua mente</div>
+      <h1>MEMORY <span>GAME</span></h1>
+      <p class="subtitle">Encontre os pares e complete o desafio!</p>
+    </header>
+
+    <section class="game" aria-label="Jogo da memória">
+      <div class="toolbar">
+        <label class="difficulty">Nível de dificuldade
+          <select id="difficulty" aria-label="Nível de dificuldade">
+            <option value="easy">Fácil · 8 pares</option>
+            <option value="medium" selected>Médio · 10 pares</option>
+            <option value="hard">Difícil · 18 pares</option>
+          </select>
+        </label>
+        <div class="stats" aria-live="polite">
+          <div class="stat"><strong id="moves">0</strong><small>Jogadas</small></div>
+          <div class="stat"><strong id="timer">00:00</strong><small>Tempo</small></div>
+          <div class="stat"><strong id="pairs">0/10</strong><small>Pares</small></div>
+        </div>
+      </div>
+
+      <div class="board" id="board" aria-label="Cartas do jogo"></div>
+      <div class="message" id="message" role="status">
+        <h2>🎉 Parabéns!</h2>
+        <p id="result"></p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="restart" type="button">↻ Reiniciar jogo</button>
+      </div>
+      <p class="hint">Toque em duas cartas para encontrar os pares. Boa sorte!</p>
+    </section>
+    <footer>Um desafio rápido para exercitar a memória.</footer>
+  </main>
+
+  <script>
+    (() => {
+      const symbols = ["🚀","🎧","🎮","⚡","🌙","🦊","🍀","🎯","🪐","🔥","🐳","🍉","💎","🧩","🌈","🦄","🏆","🎲"];
+      const levels = {easy:8, medium:10, hard:18};
+      const board = document.querySelector("#board");
+      const difficulty = document.querySelector("#difficulty");
+      const movesEl = document.querySelector("#moves");
+      const timerEl = document.querySelector("#timer");
+      const pairsEl = document.querySelector("#pairs");
+      const message = document.querySelector("#message");
+      const result = document.querySelector("#result");
+      let first = null, lock = false, moves = 0, found = 0, seconds = 0, started = false, interval = null;
+
+      const shuffle = array => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      };
+      const timeText = value => String(Math.floor(value / 60)).padStart(2,"0") + ":" + String(value % 60).padStart(2,"0");
+
+      function startTimer() {
+        if (started) return;
+        started = true;
+        interval = setInterval(() => { seconds++; timerEl.textContent = timeText(seconds); }, 1000);
+      }
+      function stopTimer() { clearInterval(interval); interval = null; }
+
+      function makeCard(symbol, index) {
+        const button = document.createElement("button");
+        button.className = "card";
+        button.type = "button";
+        button.dataset.symbol = symbol;
+        button.setAttribute("aria-label", "Carta fechada");
+        button.innerHTML = '<span class="card-inner"><span class="face back" aria-hidden="true"></span><span class="face front" aria-hidden="true">' + symbol + '</span></span>';
+        button.addEventListener("click", () => flip(button));
+        return button;
+      }
+
+      function flip(card) {
+        if (lock || card === first || card.classList.contains("matched") || card.classList.contains("flipped")) return;
+        startTimer();
+        card.classList.add("flipped");
+        card.setAttribute("aria-label", "Carta " + card.dataset.symbol);
+        if (!first) { first = card; return; }
+
+        moves++;
+        movesEl.textContent = moves;
+        if (first.dataset.symbol === card.dataset.symbol) {
+          first.classList.add("matched");
+          card.classList.add("matched");
+          first.disabled = true;
+          card.disabled = true;
+          found++;
+          pairsEl.textContent = found + "/" + levels[difficulty.value];
+          first = null;
+          if (found === levels[difficulty.value]) finish();
+        } else {
+          lock = true;
+          const previous = first;
+          first = null;
+          setTimeout(() => {
+            previous.classList.remove("flipped");
+            card.classList.remove("flipped");
+            previous.setAttribute("aria-label","Carta fechada");
+            card.setAttribute("aria-label","Carta fechada");
+            lock = false;
+          }, 850);
+        }
+      }
+
+      function finish() {
+        stopTimer();
+        result.textContent = "Você encontrou todos os " + found + " pares em " + moves + " jogadas e " + timeText(seconds) + "!";
+        message.classList.add("show");
+      }
+
+      function newGame() {
+        stopTimer();
+        first = null; lock = false; moves = 0; found = 0; seconds = 0; started = false;
+        movesEl.textContent = "0";
+        timerEl.textContent = "00:00";
+        pairsEl.textContent = "0/" + levels[difficulty.value];
+        message.classList.remove("show");
+        const chosen = shuffle([...symbols]).slice(0, levels[difficulty.value]);
+        const deck = shuffle([...chosen, ...chosen]);
+        board.style.gridTemplateColumns = "repeat(" + (difficulty.value === "hard" ? 6 : 4) + ", minmax(0,1fr))";
+        board.replaceChildren(...deck.map(makeCard));
+      }
+      document.querySelector("#restart").addEventListener("click", newGame);
+      difficulty.addEventListener("change", newGame);
+      newGame();
+    })();
+  </script>
+</body>
+</html>
