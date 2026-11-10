@@ -1,28 +1,62 @@
 # Memory Game
 
-Jogo da memória responsivo feito com HTML, CSS e JavaScript puro. Não precisa instalar dependências.
+Jogo da memória responsivo com cadastro, login, perfil e ranking, construído com HTML, CSS, JavaScript e Cloudflare Pages Functions + D1.
 
-## Executar localmente
+## Desenvolvimento local
 
-1. Baixe este repositório pelo botão **Code → Download ZIP** no GitHub e extraia o arquivo.
-2. Abra a pasta extraída.
-3. Dê dois cliques em `index.html` para abrir o jogo no navegador.
+O site estático pode ser aberto diretamente, mas os recursos de conta e ranking precisam das Pages Functions e de um banco D1 configurado.
 
-Ou, se tiver Python instalado, abra o terminal nessa pasta e execute:
+1. Instale Node.js e Wrangler: `npm install -g wrangler`.
+2. Clone o repositório e entre na pasta.
+3. Crie um banco D1: `npx wrangler d1 create memory-game-db`.
+4. Crie `wrangler.toml` na raiz com o ID retornado pelo comando:
 
-```bash
-python -m http.server 8000
+```toml
+name = "memory-game"
+compatibility_date = "2026-11-10"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "memory-game-db"
+database_id = "COLE_AQUI_O_DATABASE_ID"
 ```
 
-Depois acesse http://localhost:8000.
+5. Execute o esquema no banco remoto: `npx wrangler d1 execute memory-game-db --remote --file=./schema.sql`.
+6. Rode localmente: `npx wrangler pages dev .`.
 
-## Como jogar
+Para desenvolvimento local com banco local, remova `--remote` do comando de execução do schema e use `npx wrangler pages dev .`.
 
-- Escolha Fácil (8 pares), Médio (10 pares) ou Difícil (18 pares).
-- Clique/toque em duas cartas para tentar encontrar os pares.
-- O jogo conta jogadas e tempo automaticamente.
-- Use **Reiniciar jogo** para embaralhar novamente.
+## Configuração no Cloudflare Pages
 
-## Publicar com GitHub Pages
+1. Crie um banco em **Workers & Pages → D1 SQL Database → Create database**, com o nome `memory-game-db`.
+2. Abra o banco, entre em **Console**, cole o conteúdo de `schema.sql` e execute.
+3. No projeto Pages, abra **Settings → Functions → D1 database bindings → Add binding**.
+4. Defina o **Variable name** exatamente como `DB` e selecione o banco `memory-game-db`.
+5. Em **Settings → Builds & deployments**, use:
+   - Production branch: `main`
+   - Framework preset: `None`
+   - Build command: vazio
+   - Build output directory: `.`
+6. Salve e faça um novo deploy. As funções da pasta `functions/api` serão publicadas como rotas `/api/*`.
 
-No repositório, abra **Settings → Pages**. Em **Build and deployment**, escolha **Deploy from a branch**, selecione a branch principal e a pasta **/(root)**, depois salve. O GitHub Pages publicará o arquivo `index.html`.
+## Funcionalidades
+
+- Cadastro com usuário, e-mail e senha.
+- Senhas protegidas com PBKDF2 e salt individual.
+- Sessão persistente em cookie HttpOnly, Secure e SameSite=Lax.
+- Login e logout.
+- Registro de partidas concluídas para usuários autenticados.
+- Ranking por dificuldade, ordenado por menor número de jogadas e depois menor tempo.
+- Perfil com posição do usuário em cada dificuldade.
+
+## Rotas da API
+
+- `POST /api/register`
+- `POST /api/login`
+- `POST /api/logout`
+- `GET /api/me`
+- `GET /api/leaderboard?difficulty=easy|medium|hard`
+- `POST /api/score`
+
+**Nota:** o navegador envia o resultado da partida para a API. Para um ranking competitivo de alto rigor, será necessário validar a partida no servidor em vez de confiar apenas nos dados enviados pelo navegador.
