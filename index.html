@@ -245,6 +245,7 @@
         stopTimer();
         result.textContent = "Você encontrou todos os " + found + " pares em " + moves + " jogadas e " + timeText(seconds) + "!";
         message.classList.add("show");
+        saveResult();
       }
 
       function newGame() {
