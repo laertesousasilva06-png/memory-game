@@ -4,11 +4,15 @@ export async function onRequestGet({ request, env }) {
   const user = await currentUser(request, env);
   if (!user) return json({ user: null });
   const scores = await env.DB.prepare(
-    "SELECT difficulty, MIN(moves) AS best_moves, MIN(seconds) AS best_seconds, COUNT(*) AS games_played FROM scores WHERE user_id = ? GROUP BY difficulty"
+    "SELECT difficulty, COUNT(*) AS games_played FROM scores WHERE user_id = ? GROUP BY difficulty"
   ).bind(user.id).all();
   const rankRows = await env.DB.prepare(`
-    SELECT s.difficulty, s.user_id, MIN(s.moves) AS best_moves, MIN(s.seconds) AS best_seconds
-    FROM scores s GROUP BY s.difficulty, s.user_id
+    SELECT difficulty, user_id, moves AS best_moves, seconds AS best_seconds
+    FROM (
+      SELECT difficulty, user_id, moves, seconds,
+        ROW_NUMBER() OVER (PARTITION BY difficulty, user_id ORDER BY moves ASC, seconds ASC) AS position
+      FROM scores
+    ) WHERE position = 1
   `).all();
   const ranks = {};
   for (const difficulty of ["easy", "medium", "hard"]) {
