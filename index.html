@@ -52,7 +52,42 @@
     @media(min-width:650px){.board{gap:14px}.game{padding:26px}}
     @media(max-width:520px){.app{width:min(100% - 20px,900px);padding:22px 0 30px}.toolbar{align-items:stretch}.difficulty{flex:1}.stats{max-width:none;flex-basis:100%}.stat{padding:9px 5px}.board{gap:7px}.game{border-radius:20px}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-  </style>
+
+    .accountbar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 auto 18px}
+    .accountbar .btn{padding:9px 15px;font-size:.88rem}
+    .account-name{color:#c9d8e9;font-size:.9rem}
+    .profile,.ranking{background:#101b2b;border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:18px}
+    .profile h2,.ranking h2{font-size:1.1rem;margin:0 0 12px}
+    .rank-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .rank-tile{background:#1a2b40;border:1px solid #30445d;border-radius:12px;padding:12px;text-align:center}
+    .rank-tile strong{display:block;color:var(--cyan);font-size:1.35rem}
+    .rank-tile small{color:var(--muted)}
+    .ranking-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .ranking-head select{min-width:130px}
+    .ranking-list{display:grid;gap:8px;margin-top:12px}
+    .rank-row{display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:11px;background:#19283b}
+    .rank-number{color:var(--gold);font-weight:850;text-align:center}
+    .rank-player{font-weight:750;overflow:hidden;text-overflow:ellipsis}
+    .rank-detail{font-size:.76rem;color:var(--muted);margin-top:3px}
+    .rank-score{font-variant-numeric:tabular-nums;color:#c8e9e5;font-weight:750;text-align:right}
+    .empty-rank{color:var(--muted);text-align:center;padding:20px 8px}
+    .auth-modal{position:fixed;inset:0;z-index:10;background:#020711d9;display:grid;place-items:center;padding:18px}
+    .auth-modal[hidden]{display:none}
+    .auth-box{width:min(100%,420px);background:#142237;border:1px solid #354b67;border-radius:20px;padding:22px;box-shadow:0 25px 80px #0009}
+    .auth-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .auth-top h2{margin:0;font-size:1.35rem}
+    .auth-close{background:transparent;border:0;color:var(--muted);font-size:1.6rem;cursor:pointer}
+    .auth-tabs{display:flex;gap:8px;margin-bottom:16px}
+    .auth-tabs button{flex:1}
+    .auth-form{display:grid;gap:11px}
+    .auth-form[hidden]{display:none}
+    .auth-form label{display:grid;gap:6px;color:#b8c8db;font-size:.82rem}
+    .auth-form input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a506b;background:#0b1727;color:white;font:inherit}
+    .auth-error{color:#ff9c9c;font-size:.82rem;min-height:1.1em}
+    .auth-note{color:var(--muted);font-size:.75rem;line-height:1.5;margin:2px 0 0}
+    .signed-out-note{color:var(--muted);font-size:.86rem;text-align:center}
+    @media(max-width:520px){.profile,.ranking{padding:14px}.rank-grid{gap:6px}.rank-tile{padding:10px 4px}.rank-row{grid-template-columns:30px 1fr auto;padding:9px}.auth-box{padding:18px}}
+\n  </style>
 </head>
 <body>
   <main class="app">
@@ -62,7 +97,40 @@
       <p class="subtitle">Encontre os pares e complete o desafio!</p>
     </header>
 
-    <section class="game" aria-label="Jogo da memória">
+
+    <div class="accountbar">
+      <span class="account-name" id="accountStatus">Você está jogando como visitante</span>
+      <button class="btn primary" id="authOpen" type="button">Entrar / Criar conta</button>
+      <button class="btn" id="logout" type="button" hidden>Sair</button>
+    </div>
+    <section class="profile" id="profile" hidden>
+      <h2>Olá, <span id="profileName"></span>! 👋</h2>
+      <p class="hint" style="text-align:left;margin:0 0 12px">Sua melhor posição em cada dificuldade</p>
+      <div class="rank-grid" id="myRanks"></div>
+    </section>
+    <div class="auth-modal" id="authModal" hidden>
+      <div class="auth-box" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="auth-top"><h2 id="authTitle">Sua conta</h2><button class="auth-close" id="authClose" aria-label="Fechar" type="button">×</button></div>
+        <div class="auth-tabs">
+          <button class="btn primary" id="showLogin" type="button">Entrar</button>
+          <button class="btn" id="showRegister" type="button">Criar conta</button>
+        </div>
+        <form class="auth-form" id="loginForm">
+          <label>E-mail<input name="email" type="email" autocomplete="email" maxlength="190" required></label>
+          <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
+          <div class="auth-error" id="loginError" role="alert"></div>
+          <button class="btn primary" type="submit">Entrar na conta</button>
+        </form>
+        <form class="auth-form" id="registerForm" hidden>
+          <label>Nome de usuário<input name="username" type="text" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" autocomplete="username" required></label>
+          <label>E-mail<input name="email" type="email" autocomplete="email" maxlength="190" required></label>
+          <label>Senha<input name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+          <p class="auth-note">O nome de usuário deve ter de 3 a 20 caracteres (letras, números ou _). A senha precisa ter pelo menos 8 caracteres.</p>
+          <div class="auth-error" id="registerError" role="alert"></div>
+          <button class="btn primary" type="submit">Criar minha conta</button>
+        </form>
+      </div>
+    </div>\n    <section class="game" aria-label="Jogo da memória">
       <div class="toolbar">
         <label class="difficulty">Nível de dificuldade
           <select id="difficulty" aria-label="Nível de dificuldade">
@@ -88,7 +156,17 @@
       </div>
       <p class="hint">Toque em duas cartas para encontrar os pares. Boa sorte!</p>
     </section>
-    <footer>Um desafio rápido para exercitar a memória.</footer>
+
+    <section class="ranking" aria-label="Ranking dos jogadores">
+      <div class="ranking-head">
+        <h2>🏆 Ranking dos jogadores</h2>
+        <select id="rankingDifficulty" aria-label="Dificuldade do ranking">
+          <option value="easy">Fácil</option><option value="medium" selected>Médio</option><option value="hard">Difícil</option>
+        </select>
+      </div>
+      <div class="ranking-list" id="rankingList"><div class="empty-rank">Carregando ranking...</div></div>
+      <p class="hint">O ranking considera a menor quantidade de jogadas; em caso de empate, vence o menor tempo.</p>
+    </section>\n    <footer>Um desafio rápido para exercitar a memória.</footer>
   </main>
 
   <script>
@@ -181,7 +259,137 @@
         board.style.gridTemplateColumns = "repeat(" + (difficulty.value === "hard" ? 6 : 4) + ", minmax(0,1fr))";
         board.replaceChildren(...deck.map(makeCard));
       }
-      document.querySelector("#restart").addEventListener("click", newGame);
+
+      let loggedUser = null;
+      const $ = selector => document.querySelector(selector);
+      async function api(path, options = {}) {
+        const response = await fetch("/api/" + path, {
+          ...options, credentials: "same-origin",
+          headers: { "content-type": "application/json", ...(options.headers || {}) }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Não foi possível concluir a solicitação.");
+        return data;
+      }
+      function showAuth(mode = "login") {
+        $("#authModal").hidden = false;
+        setAuthMode(mode);
+      }
+      function closeAuth() { $("#authModal").hidden = true; }
+      function setAuthMode(mode) {
+        const loginMode = mode === "login";
+        $("#loginForm").hidden = !loginMode;
+        $("#registerForm").hidden = loginMode;
+        $("#showLogin").classList.toggle("primary", loginMode);
+        $("#showRegister").classList.toggle("primary", !loginMode);
+        $("#authTitle").textContent = loginMode ? "Bem-vindo de volta!" : "Crie sua conta";
+      }
+      function updateAccount() {
+        $("#authOpen").hidden = !!loggedUser;
+        $("#logout").hidden = !loggedUser;
+        $("#accountStatus").textContent = loggedUser ? "Conectado como " + loggedUser.username : "Você está jogando como visitante";
+        $("#profile").hidden = !loggedUser;
+        if (loggedUser) $("#profileName").textContent = loggedUser.username;
+      }
+      async function refreshProfile() {
+        if (!loggedUser) return;
+        const data = await api("me");
+        loggedUser = data.user;
+        updateAccount();
+        const labels = {easy:"Fácil",medium:"Médio",hard:"Difícil"};
+        $("#myRanks").replaceChildren();
+        for (const level of ["easy","medium","hard"]) {
+          const tile = document.createElement("div");
+          tile.className = "rank-tile";
+          const rank = data.ranks && data.ranks[level];
+          const strong = document.createElement("strong");
+          strong.textContent = rank ? "#" + rank : "—";
+          const small = document.createElement("small");
+          small.textContent = labels[level];
+          tile.append(strong,small);
+          $("#myRanks").append(tile);
+        }
+      }
+      async function loadLeaderboard() {
+        const level = $("#rankingDifficulty").value;
+        const list = $("#rankingList");
+        list.replaceChildren();
+        try {
+          const data = await api("leaderboard?difficulty=" + level, { method: "GET", headers: {} });
+          if (!data.leaderboard.length) {
+            const empty = document.createElement("div"); empty.className = "empty-rank";
+            empty.textContent = "Ainda não há pontuações nesta dificuldade. Seja o primeiro!";
+            list.append(empty); return;
+          }
+          data.leaderboard.forEach((player,index) => {
+            const row = document.createElement("div"); row.className = "rank-row";
+            const number = document.createElement("div"); number.className = "rank-number"; number.textContent = "#" + (index + 1);
+            const info = document.createElement("div");
+            const name = document.createElement("div"); name.className = "rank-player"; name.textContent = player.username;
+            const detail = document.createElement("div"); detail.className = "rank-detail";
+            detail.textContent = player.games_played + " partida(s) registrada(s)";
+            info.append(name,detail);
+            const score = document.createElement("div"); score.className = "rank-score";
+            score.textContent = player.best_moves + " jogadas · " + timeText(player.best_seconds);
+            row.append(number,info,score); list.append(row);
+          });
+        } catch (error) {
+          const empty = document.createElement("div"); empty.className = "empty-rank"; empty.textContent = error.message; list.append(empty);
+        }
+      }
+      async function saveResult() {
+        if (!loggedUser) {
+          result.textContent += " Entre ou crie uma conta para registrar sua pontuação no ranking.";
+          return;
+        }
+        try {
+          await api("score", {method:"POST",body:JSON.stringify({
+            difficulty:difficulty.value,moves,seconds,pairs:found
+          })});
+          result.textContent += " Sua pontuação foi salva no ranking!";
+          await refreshProfile();
+          await loadLeaderboard();
+        } catch (error) {
+          result.textContent += " Não foi possível salvar: " + error.message;
+        }
+      }
+      $("#authOpen").addEventListener("click", () => showAuth("login"));
+      $("#authClose").addEventListener("click", closeAuth);
+      $("#authModal").addEventListener("click", event => { if (event.target === $("#authModal")) closeAuth(); });
+      $("#showLogin").addEventListener("click", () => setAuthMode("login"));
+      $("#showRegister").addEventListener("click", () => setAuthMode("register"));
+      $("#loginForm").addEventListener("submit", async event => {
+        event.preventDefault(); $("#loginError").textContent = "";
+        const form = new FormData(event.currentTarget);
+        try {
+          const data = await api("login",{method:"POST",body:JSON.stringify(Object.fromEntries(form))});
+          loggedUser = data.user; updateAccount(); closeAuth();
+          await refreshProfile(); await loadLeaderboard();
+        } catch(error) { $("#loginError").textContent = error.message; }
+      });
+      $("#registerForm").addEventListener("submit", async event => {
+        event.preventDefault(); $("#registerError").textContent = "";
+        const form = new FormData(event.currentTarget);
+        try {
+          const data = await api("register",{method:"POST",body:JSON.stringify(Object.fromEntries(form))});
+          loggedUser = data.user; updateAccount(); closeAuth();
+          await refreshProfile(); await loadLeaderboard();
+        } catch(error) { $("#registerError").textContent = error.message; }
+      });
+      $("#logout").addEventListener("click", async () => {
+        try { await api("logout",{method:"POST",body:"{}"}); } catch(error) {}
+        loggedUser = null; updateAccount(); $("#myRanks").replaceChildren(); await loadLeaderboard();
+      });
+      $("#rankingDifficulty").addEventListener("change", loadLeaderboard);
+      async function initAccount() {
+        try { const data = await api("me",{method:"GET",headers:{}}); loggedUser = data.user; }
+        catch(error) { loggedUser = null; }
+        updateAccount();
+        if (loggedUser) await refreshProfile();
+        await loadLeaderboard();
+      }
+      initAccount();
+\n      document.querySelector("#restart").addEventListener("click", newGame);
       difficulty.addEventListener("change", newGame);
       newGame();
     })();
